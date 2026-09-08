@@ -1,4 +1,48 @@
 # simple-back
+
+## 오늘 실습 정리: Docker · 네트워크 · GHCR
+
+### 1. Docker 이미지 빌드와 실행
+
+- `Dockerfile`은 멀티 스테이지 빌드를 사용한다. Gradle/JDK 이미지에서 `bootJar`로 JAR를 만들고, 더 가벼운 JRE 이미지에 결과물만 복사해 실행한다.
+- 애플리케이션 컨테이너는 `8080` 포트를 사용하며 `java -jar app.jar`로 시작한다.
+
+```sh
+docker build -t simple-back:local .
+docker run --rm -p 8080:8080 simple-back:local
+```
+
+### 2. Docker 네트워크 확인
+
+`docker network inspect app-net`은 이름이 `app-net`인 네트워크의 연결된 컨테이너와 설정을 확인하는 명령이다. 다음 오류는 Docker는 정상 동작하지만 해당 네트워크가 아직 만들어지지 않았다는 의미다.
+
+```text
+Error response from daemon: network app-net not found
+```
+
+먼저 현재 네트워크를 확인하고, 없으면 생성한다.
+
+```sh
+docker network ls
+docker network create app-net
+docker network inspect app-net
+```
+
+### 3. GitHub Container Registry(GHCR) 자동 배포
+
+`.github/workflows/docker-publish.yml`은 `main` 브랜치에 push할 때 실행된다.
+
+1. 소스를 checkout하고 Docker Buildx를 준비한다.
+2. `GITHUB_TOKEN`으로 `ghcr.io`에 로그인한다. 워크플로에는 `packages: write` 권한이 필요하다.
+3. 이미지 이름을 소문자로 바꾼 뒤 `ghcr.io/<owner>/<repository>:latest` 태그로 빌드·푸시한다.
+
+이미지를 받거나 실행할 때는 다음처럼 사용할 수 있다.
+
+```sh
+docker pull ghcr.io/pjmoo/simple-back-ghcr:latest
+docker run --rm -p 8080:8080 ghcr.io/pjmoo/simple-back-ghcr:latest
+```
+
 Spring Boot 4 기반의 간단한 사용자 조회 REST API 실습 프로젝트입니다.
 ## 기술 스택
 ![Java 17](https://img.shields.io/badge/Java-17-007396?logo=openjdk&logoColor=white) ![Spring Boot 4](https://img.shields.io/badge/Spring_Boot-4.1.1-6DB33F?logo=springboot&logoColor=white) ![Gradle](https://img.shields.io/badge/Gradle-Wrapper-02303A?logo=gradle&logoColor=white) ![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white) ![Lombok](https://img.shields.io/badge/Lombok-BC4521?logoColor=white) ![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?logo=prometheus&logoColor=white)
